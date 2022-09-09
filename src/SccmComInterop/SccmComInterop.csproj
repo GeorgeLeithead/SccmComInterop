@@ -4,7 +4,26 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <Title>SCCM COM Interop</Title>
+    <Description>A COM interoperability Library for SCCM 2012.</Description>
+    <Copyright>InternetWideWorld.com</Copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/GeorgeLeithead/SccmComInterop</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>sccm;com;interop;microsfot;configuration;manager;sms</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="AdminUI.WqlQueryEngine">
