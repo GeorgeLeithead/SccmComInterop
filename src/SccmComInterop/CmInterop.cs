@@ -1,4 +1,6 @@
-﻿namespace SccmComInterop;
+﻿// Ignore Spelling: interop, sccm, wql, nal, embeded, sci, sys, res, netbios, obj
+
+namespace SccmComInterop;
 
 using System.Globalization;
 using Microsoft.ConfigurationManagement.ManagementProvider;
@@ -22,7 +24,7 @@ public static partial class CmInterop
 			// Get the specific UserGroup object
 			IResultObject system = connection.GetInstance($"SMS_R_System.ResourceID='{resourceId}'");
 			List<IResultObject> collectionRules = collectionToModify.GetArrayItems("CollectionRules");
-			bool found = collectionRules.Any(collectionRule => collectionRule["RuleName"].StringValue.Equals(system["Name"].StringValue));
+			bool found = collectionRules.Exists(collectionRule => collectionRule["RuleName"].StringValue.Equals(system["Name"].StringValue));
 			if (found)
 			{
 				return;
@@ -111,7 +113,7 @@ public static partial class CmInterop
 			IResultObject collectionToModify = connection.GetInstance($"SMS_Collection.CollectionID='{collectionId}'");
 			collectionToModify.Get();
 			List<IResultObject> collectionRules = collectionToModify.GetArrayItems("CollectionRules");
-			bool found = collectionRules.Any(collectionRule => collectionRule["RuleName"].StringValue.Equals(ruleName));
+			bool found = collectionRules.Exists(collectionRule => collectionRule["RuleName"].StringValue.Equals(ruleName));
 			if (found)
 			{
 				return;
@@ -203,6 +205,7 @@ public static partial class CmInterop
 	/// <param name="connection">The connection.</param>
 	/// <param name="existingPackageId">The existing package id.</param>
 	/// <param name="distributionPointGroupName">The distribution point group name.</param>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S3267:Loops should be simplified with \"LINQ\" expressions", Justification = "IResultObject' does not contain a definition for 'Cast' and the best extension method overload 'ParallelEnumerable.Cast<IResultObject>(ParallelQuery)' requires a receiver of type 'System.Linq.ParallelQuery'")]
 	public static void AssignSccmPackageToDistributionPointGroup(WqlConnectionManager connection, string existingPackageId, string distributionPointGroupName)
 	{
 		try
@@ -851,11 +854,12 @@ public static partial class CmInterop
 	{
 		try
 		{
-			Dictionary<string, object> parameters = new();
-			string[] sourceItems = new string[1];
-
-			// Only one item is being moved, the array size is 1.
-			sourceItems[0] = itemObjectId;
+			Dictionary<string, object> parameters = [];
+			string[] sourceItems =
+			[
+				// Only one item is being moved, the array size is 1.
+				itemObjectId,
+			];
 			parameters.Add("InstanceKeys", sourceItems);
 			parameters.Add("ContainerNodeID", sourceContainerId);
 			parameters.Add("TargetContainerNodeID", destinationContainerId);
@@ -927,6 +931,7 @@ public static partial class CmInterop
 	/// <param name="siteCode">The site code.</param>
 	/// <param name="serverName">The server name.</param>
 	/// <param name="nalPathQuery">The NAL path query.</param>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S3267:Loops should be simplified with \"LINQ\" expressions", Justification = "IResultObject' does not contain a definition for 'Cast' and the best extension method overload 'ParallelEnumerable.Cast<IResultObject>(ParallelQuery)' requires a receiver of type 'System.Linq.ParallelQuery'")]
 	public static void RefreshSccmPackageAtDistributionPoint(WqlConnectionManager connection, string existingPackageId, string siteCode, string serverName, string nalPathQuery)
 	{
 		try
@@ -1003,6 +1008,7 @@ public static partial class CmInterop
 	/// <param name="connection">The connection.</param>
 	/// <param name="collectionId">The collection ID.</param>
 	/// <param name="ruleName">The rule name.</param>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S3267:Loops should be simplified with \"LINQ\" expressions", Justification = "IResultObject' does not contain a definition for 'Cast' and the best extension method overload 'ParallelEnumerable.Cast<IResultObject>(ParallelQuery)' requires a receiver of type 'System.Linq.ParallelQuery'")]
 	public static void RemoveSccmCollectionMember(WqlConnectionManager connection, string collectionId, string ruleName)
 	{
 		try
@@ -1100,6 +1106,7 @@ public static partial class CmInterop
 	/// <param name="connection">The connection.</param>
 	/// <param name="existingPackageId">The existing package ID.</param>
 	/// <param name="distributionPointGroupName">The distribution point group name.</param>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S3267:Loops should be simplified with \"LINQ\" expressions", Justification = "IResultObject' does not contain a definition for 'Cast' and the best extension method overload 'ParallelEnumerable.Cast<IResultObject>(ParallelQuery)' requires a receiver of type 'System.Linq.ParallelQuery'")]
 	public static void RemoveSccmPackageFromDistributionPointGroup(WqlConnectionManager connection, string existingPackageId, string distributionPointGroupName)
 	{
 		try
@@ -1143,24 +1150,15 @@ public static partial class CmInterop
 	/// <returns>The <see cref="bool"/> result of clearing the PXE request.</returns>
 	public static bool RunClearOnDevice(WqlConnectionManager connection, string netBiosName)
 	{
-		List<int> list = new();
-		Dictionary<string, object> dictionary = new();
+		List<int> list = [];
+		Dictionary<string, object> dictionary = [];
 		string query = $"SELECT * FROM SMS_LastPXEAdvertisement WHERE NetBiosName='{netBiosName}'";
 		IResultObject array = connection.QueryProcessor.ExecuteQuery(query);
 		if (array is not null)
 		{
-			IResultObject computerObject = GetSccmComputer(connection, null, netBiosName, null, null);
-			if (computerObject is null)
-			{
-				throw new SmsException($"Unable to locate Resource ID for NetBiosName: NetBiosName: {netBiosName}");
-			}
-
-			foreach (IResultObject obj in computerObject)
-			{
-				obj.Get();
-				list.Add(obj["ResourceID"].IntegerValue);
-				break;
-			}
+			IResultObject computerObject = GetSccmComputer(connection, null, netBiosName, null, null) ?? throw new SmsException($"Unable to locate Resource ID for NetBiosName: NetBiosName: {netBiosName}");
+			computerObject.Get();
+			list.Add(computerObject["ResourceID"].IntegerValue);
 		}
 
 		if (list.Count == 0)
@@ -1169,12 +1167,7 @@ public static partial class CmInterop
 		}
 
 		dictionary.Add("ResourceIDs", list.ToArray());
-		IResultObject resultObject = connection.ExecuteMethod("SMS_Collection", "ClearLastNBSAdvForMachines", dictionary);
-		if (resultObject is null)
-		{
-			throw new SmsException($"Failed to clear PXE advertisement for NetBiosName: NetBiosName: {netBiosName}, Resource ID: {list[0]}");
-		}
-
+		IResultObject resultObject = connection.ExecuteMethod("SMS_Collection", "ClearLastNBSAdvForMachines", dictionary) ?? throw new SmsException($"Failed to clear PXE advertisement for NetBiosName: NetBiosName: {netBiosName}, Resource ID: {list[0]}");
 		if (resultObject["StatusCode"].IntegerValue is not 0)
 		{
 			throw new SmsException(resultObject["Description"].StringValue);
